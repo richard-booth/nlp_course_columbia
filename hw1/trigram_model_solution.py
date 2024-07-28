@@ -35,8 +35,23 @@ def get_ngrams(sequence, n):
     Given a sequence, this function should return a list of n-grams, where each n-gram is a Python tuple.
     This should work for arbitrary values of 1 <= n < len(sequence).
     """
-
-    return []
+    seq = ['START'] + sequence + ['STOP']
+    grams= []
+    if n==1:
+        for x in seq:
+            grams.append((x,))
+    else:
+        for i in range(2,len(seq)+1):
+            pre_list = []
+            for j in range(i-n, i):
+                if j < 0:
+                    pre_list.append('START')
+                else:
+                    pre_list.append(seq[j])
+            gram = tuple(pre_list)
+            grams.append(gram)
+    return grams
+    #return []
 
 
 class TrigramModel(object):
@@ -49,7 +64,7 @@ class TrigramModel(object):
         self.lexicon.add("UNK")
         self.lexicon.add("START")
         self.lexicon.add("STOP")
-    
+        self.lex_len = len(self.lexicon)
         # Now iterate through the corpus again and count ngrams
         generator = corpus_reader(corpusfile, self.lexicon)
         self.count_ngrams(generator)
@@ -67,7 +82,28 @@ class TrigramModel(object):
         self.trigramcounts = {} 
 
         ##Your code here
-
+        unigrams = []
+        bigrams = []
+        trigrams = []
+        for sentence in corpus:
+            unigrams += get_ngrams(sentence, 1)
+            bigrams += get_ngrams(sentence, 2)
+            trigrams += get_ngrams(sentence, 3)
+        for gram in unigrams:
+            if gram in self.unigramcounts:
+                self.unigramcounts[gram]+=1
+            else:
+                self.unigramcounts[gram]=1
+        for gram in bigrams:
+            if gram in self.bigramcounts:
+                self.bigramcounts[gram]+=1
+            else:
+                self.bigramcounts[gram]=1
+        for gram in trigrams:
+            if gram in self.trigramcounts:
+                self.trigramcounts[gram]+=1
+            else:
+                self.trigramcounts[gram]=1
         return
 
     def raw_trigram_probability(self,trigram):
@@ -75,14 +111,14 @@ class TrigramModel(object):
         COMPLETE THIS METHOD (PART 3)
         Returns the raw (unsmoothed) trigram probability
         """
-        return 0.0
+        return self.trigramcounts[trigram]/self.bigramcounts[trigram[0:2]]
 
     def raw_bigram_probability(self, bigram):
         """
         COMPLETE THIS METHOD (PART 3)
         Returns the raw (unsmoothed) bigram probability
         """
-        return 0.0
+        return self.bigramcounts[bigram]/self.unigramcounts[bigram[0:1]]
     
     def raw_unigram_probability(self, unigram):
         """
@@ -93,7 +129,7 @@ class TrigramModel(object):
         #hint: recomputing the denominator every time the method is called
         # can be slow! You might want to compute the total number of words once, 
         # store in the TrigramModel instance, and then re-use it.  
-        return 0.0
+        return self.unigramcounts[unigram]/self.lex_len
 
     def generate_sentence(self,t=20): 
         """
@@ -148,7 +184,8 @@ def essay_scoring_experiment(training_file1, training_file2, testdir1, testdir2)
 
 if __name__ == "__main__":
 
-    model = TrigramModel(sys.argv[1]) 
+    model = TrigramModel('./hw1_data/brown_train.txt') 
+    print(model.raw_unigram_probability(('a',)))
 
     # put test code here...
     # or run the script from the command line with 
